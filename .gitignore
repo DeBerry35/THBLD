@@ -1,0 +1,17 @@
+# Ignored files
+
+# Dependency directories
+node_modules/
+bower_components/
+
+# Logs
+logs/
+*.log
+
+# Operating system files
+desktop.ini
+Thumbs.db
+
+# IDE configuration files
+.vscode/
+.idea/
