@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InstaTrack - Monitor Instagram Activity</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #FF3366;
+      --primary-dark: #CC0044;
+      --secondary: #00D9FF;
+      --bg-dark: #0A0A0F;
+      --bg-card: #14141F;
+      --bg-elevated: #1C1C2E;
+      --text: #FFFFFF;
+      --text-dim: #A0A0B8;
+      --border: #2A2A3F;
+      --success: #00FF88;
+      --warning: #FFB800;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Archivo', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 50%, rgba(255, 51, 102, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 217, 255, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+      animation: pulse 8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    #root {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Navigation */
+    nav {
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      background: rgba(10, 10, 15, 0.8);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 6rem 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-dim);
+      margin-bottom: 3rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-button {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border: none;
+      padding: 1rem 2.5rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      box-shadow: 0 10px 30px rgba(255, 51, 102, 0.3);
+      font-family: 'Archivo', sans-serif;
+    }
+
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 40px rgba(255, 51, 102, 0.4);
+    }
+
+    /* Features Grid */
+    .features {
+      padding: 4rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transform: scaleX(0);
+      transition: transform 0.3s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+    }
+
+    .feature-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 0.75rem;
+      font-weight: 700;
+    }
+
+    .feature-card p {
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* Dashboard */
+    .dashboard {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .dashboard-header {
+      margin-bottom: 3rem;
+    }
+
+    .dashboard-header h2 {
+      font-size: 2.5rem;
+      font-weight: 900;
+      margin-bottom: 0.5rem;
+    }
+
+    .dashboard-header p {
+      color: var(--text-dim);
+      font-size: 1.1rem;
+    }
+
+    .add-user-section {
+      background: var(--bg-card);
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 3rem;
+      transition: all 0.3s;
+    }
+
+    .add-user-section:hover {
+      border-color: var(--primary);
+    }
+
+    .input-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    input {
+      flex: 1;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      transition: all 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 51, 102, 0.1);
+    }
+
+    input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Archivo', sans-serif;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(255, 51, 102, 0.3);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* User Cards Grid */
+    .tracked-users {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 2rem;
+    }
+
+    .user-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .user-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      border-color: var(--primary);
+    }
+
+    .user-card-header {
+      padding: 1.5rem;
+      background: linear-gradient(135deg, rgba(255, 51, 102, 0.1), rgba(0, 217, 255, 0.1));
+      border-bottom: 1px solid var(--border);
+    }
+
+    .user-card-header h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .user-card-body {
+      padding: 1.5rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat {
+      background: var(--bg-elevated);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-label {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .view-details {
+      width: 100%;
+      background: var(--bg-elevated);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Archivo', sans-serif;
+      margin-top: 1rem;
+    }
+
+    .view-details:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Detail View */
+    .detail-view {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .back-button {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Archivo', sans-serif;
+      margin-bottom: 2rem;
+    }
+
+    .back-button:hover {
+      border-color: var(--primary);
+    }
+
+    .detail-header {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .detail-header h2 {
+      font-size: 2rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .detail-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .chart-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-section h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    .interactions-list {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+    }
+
+    .interaction-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: var(--bg-elevated);
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+      transition: all 0.3s;
+    }
+
+    .interaction-item:hover {
+      border-color: var(--primary);
+      transform: translateX(5px);
+    }
+
+    .interaction-user {
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .interaction-count {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 4rem 2rem;
+      font-size: 1.2rem;
+      color: var(--text-dim);
+    }
+
+    .error {
+      background: rgba(255, 51, 102, 0.1);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-dim);
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+
+      .features {
+        grid-template-columns: 1fr;
+      }
+
+      .input-group {
+        flex-direction: column;
+      }
+
+      .tracked-users {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .feature-card, .user-card {
+      animation: fadeInUp 0.6s ease-out backwards;
+    }
+
+    .feature-card:nth-child(1) { animation-delay: 0.1s; }
+    .feature-card:nth-child(2) { animation-delay: 0.2s; }
+    .feature-card:nth-child(3) { animation-delay: 0.3s; }
+    .feature-card:nth-child(4) { animation-delay: 0.4s; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // API Configuration
+    const API_URL = 'http://localhost:3001/api';
+
+    function App() {
+      const [view, setView] = useState('landing'); // landing, dashboard, detail
+      const [trackedUsers, setTrackedUsers] = useState([]);
+      const [selectedUser, setSelectedUser] = useState(null);
+      const [username, setUsername] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      useEffect(() => {
+        if (view === 'dashboard') {
+          fetchTrackedUsers();
+        }
+      }, [view]);
+
+      const fetchTrackedUsers = async () => {
+        try {
+          const response = await fetch(`${API_URL}/tracked`);
+          const data = await response.json();
+          setTrackedUsers(data.users || []);
+        } catch (err) {
+          console.error('Error fetching tracked users:', err);
+        }
+      };
+
+      const handleAddUser = async (e) => {
+        e.preventDefault();
+        if (!username.trim()) return;
+
+        setLoading(true);
+        setError('');
+
+        try {
+          const response = await fetch(`${API_URL}/track`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username.trim() })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            setUsername('');
+            fetchTrackedUsers();
+          } else {
+            setError(data.error || 'Failed to add user');
+          }
+        } catch (err) {
+          setError('Failed to connect to server. Make sure the backend is running.');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleViewDetails = async (user) => {
+        setLoading(true);
+        try {
+          const response = await fetch(`${API_URL}/activity/${user.username}`);
+          const data = await response.json();
+          setSelectedUser(data);
+          setView('detail');
+        } catch (err) {
+          console.error('Error fetching user details:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      if (view === 'landing') {
+        return <LandingPage onGetStarted={() => setView('dashboard')} />;
+      }
+
+      if (view === 'detail' && selectedUser) {
+        return <DetailView user={selectedUser} onBack={() => { setView('dashboard'); setSelectedUser(null); }} />;
+      }
+
+      return (
+        <div>
+          <Navigation />
+          <div className="dashboard">
+            <div className="dashboard-header">
+              <h2>Your Dashboard</h2>
+              <p>Track and analyze Instagram activity in real-time</p>
+            </div>
+
+            <div className="add-user-section">
+              <h3>Track New User</h3>
+              <form onSubmit={handleAddUser}>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    placeholder="Enter Instagram username (e.g., username)"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={loading}
+                  />
+                  <button type="submit" className="btn" disabled={loading}>
+                    {loading ? 'Adding...' : 'Track User'}
+                  </button>
+                </div>
+              </form>
+              {error && <div className="error">{error}</div>}
+            </div>
+
+            {trackedUsers.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">📊</div>
+                <h3>No users tracked yet</h3>
+                <p>Add an Instagram username above to start tracking their activity</p>
+              </div>
+            ) : (
+              <div className="tracked-users">
+                {trackedUsers.map((user) => (
+                  <UserCard key={user.username} user={user} onViewDetails={handleViewDetails} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function Navigation() {
+      return (
+        <nav>
+          <div className="logo">InstaTrack</div>
+          <div className="nav-links">
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#about">About</a>
+          </div>
+        </nav>
+      );
+    }
+
+    function LandingPage({ onGetStarted }) {
+      return (
+        <div>
+          <Navigation />
+          
+          <div className="hero">
+            <h1>
+              Track Instagram Activity <br />
+              <span className="gradient-text">Like Never Before</span>
+            </h1>
+            <p>
+              Monitor interactions, analyze engagement patterns, and discover who users 
+              interact with most. All from public Instagram profiles.
+            </p>
+            <button className="cta-button" onClick={onGetStarted}>
+              Get Started Free
+            </button>
+          </div>
+
+          <div className="features" id="features">
+            <div className="feature-card">
+              <div className="feature-icon">👥</div>
+              <h3>Top Interactions</h3>
+              <p>See who users interact with most through likes and comments</p>
+            </div>
+
+            <div className="feature-card">
+              <div className="feature-icon">📊</div>
+              <h3>Activity Patterns</h3>
+              <p>Analyze when users are most active throughout the day</p>
+            </div>
+
+            <div className="feature-card">
+              <div className="feature-icon">📈</div>
+              <h3>Engagement Trends</h3>
+              <p>Track daily engagement metrics and spot patterns over time</p>
+            </div>
+
+            <div className="feature-card">
+              <div className="feature-icon">🔍</div>
+              <h3>Real-time Updates</h3>
+              <p>Get fresh data on demand to stay up-to-date with user activity</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function UserCard({ user, onViewDetails }) {
+      return (
+        <div className="user-card" onClick={() => onViewDetails(user)}>
+          <div className="user-card-header">
+            <h3>@{user.username}</h3>
+          </div>
+          <div className="user-card-body">
+            <div className="stats-grid">
+              <div className="stat">
+                <div className="stat-value">{user.stats?.totalLikes || 0}</div>
+                <div className="stat-label">Total Likes</div>
+              </div>
+              <div className="stat">
+                <div className="stat-value">{user.stats?.totalComments || 0}</div>
+                <div className="stat-label">Comments</div>
+              </div>
+            </div>
+            <button className="view-details">View Full Report →</button>
+          </div>
+        </div>
+      );
+    }
+
+    function DetailView({ user, onBack }) {
+      useEffect(() => {
+        // Create activity chart
+        const ctx = document.getElementById('activityChart');
+        if (ctx && user.activityPattern) {
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: user.activityPattern.map(d => `${d.hour}:00`),
+              datasets: [{
+                label: 'Activity',
+                data: user.activityPattern.map(d => d.activity),
+                borderColor: '#FF3366',
+                backgroundColor: 'rgba(255, 51, 102, 0.1)',
+                tension: 0.4,
+                fill: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  grid: { color: '#2A2A3F' },
+                  ticks: { color: '#A0A0B8' }
+                },
+                x: {
+                  grid: { color: '#2A2A3F' },
+                  ticks: { color: '#A0A0B8' }
+                }
+              }
+            }
+          });
+        }
+
+        // Create daily activity chart
+        const ctx2 = document.getElementById('dailyChart');
+        if (ctx2 && user.recentActivity) {
+          new Chart(ctx2, {
+            type: 'bar',
+            data: {
+              labels: user.recentActivity.map(d => d.date),
+              datasets: [
+                {
+                  label: 'Likes',
+                  data: user.recentActivity.map(d => d.likes),
+                  backgroundColor: '#FF3366'
+                },
+                {
+                  label: 'Comments',
+                  data: user.recentActivity.map(d => d.comments),
+                  backgroundColor: '#00D9FF'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  labels: { color: '#A0A0B8' }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  grid: { color: '#2A2A3F' },
+                  ticks: { color: '#A0A0B8' }
+                },
+                x: {
+                  grid: { color: '#2A2A3F' },
+                  ticks: { color: '#A0A0B8' }
+                }
+              }
+            }
+          });
+        }
+      }, [user]);
+
+      return (
+        <div className="detail-view">
+          <button className="back-button" onClick={onBack}>← Back to Dashboard</button>
+          
+          <div className="detail-header">
+            <h2>@{user.username}</h2>
+            <p>Last updated: {new Date(user.lastUpdated).toLocaleString()}</p>
+            
+            <div className="detail-stats">
+              <div className="stat">
+                <div className="stat-value">{user.stats.totalLikes}</div>
+                <div className="stat-label">Total Likes</div>
+              </div>
+              <div className="stat">
+                <div className="stat-value">{user.stats.totalComments}</div>
+                <div className="stat-label">Total Comments</div>
+              </div>
+              <div className="stat">
+                <div className="stat-value">{user.stats.totalFollows}</div>
+                <div className="stat-label">New Follows</div>
+              </div>
+              <div className="stat">
+                <div className="stat-value">{user.stats.avgDailyActivity}</div>
+                <div className="stat-label">Avg Daily Activity</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="chart-section">
+            <h3>Activity Pattern (24 Hours)</h3>
+            <div style={{ height: '300px' }}>
+              <canvas id="activityChart"></canvas>
+            </div>
+          </div>
+
+          <div className="chart-section">
+            <h3>Recent Activity (7 Days)</h3>
+            <div style={{ height: '300px' }}>
+              <canvas id="dailyChart"></canvas>
+            </div>
+          </div>
+
+          <div className="interactions-list">
+            <h3>Top Interactions</h3>
+            {user.topInteractions.map((interaction, index) => (
+              <div key={index} className="interaction-item">
+                <div>
+                  <div className="interaction-user">@{interaction.username}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+                    {interaction.type}
+                  </div>
+                </div>
+                <div className="interaction-count">{interaction.interactions}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
