@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "env": {
+    "DATABASE_URL": "your_database_url",
+    "API_KEY": "your_api_key"
+  },
+  "deploy": {
+    "command": "npm run build",
+    "alias": "your_project_alias"
+  }
+}
